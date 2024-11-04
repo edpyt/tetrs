@@ -7,7 +7,7 @@ pub trait BrickMove {
     fn can_move(&mut self, game: &Game, dx: i32, dy: i32) -> bool;
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct Brick {
     x: i32,
     y: i32,
@@ -29,15 +29,37 @@ impl BrickMove for Brick {
         let x = self.x + dx;
         let y = self.y + dy;
 
-        if (game.border_size..game.width + 1).any(|v| v == x)
-            && (0..game.height + 1).any(|v| v == y)
-            && j
-        {
-            todo!()
-        }
-
-        true
+        (game.border_size..game.width + 1).contains(&x)
+            && (0..game.height + 1).contains(&y)
+            && game
+                .building
+                .iter()
+                .any(|building| building.cords == (x, y))
     }
+}
+
+#[derive(Debug)]
+pub struct Block {
+    center_brick_index: usize,
+    bricks: Vec<Brick>,
+    center: Brick,
+}
+
+/// Block is trait that can move and rotate blocks on the game board.
+trait BlockMethods<'a> {
+    fn new(center_x: i32, center_y: i32) -> Block {
+        let center_brick_index = 1;
+        let bricks: Vec<Brick> = Self::init_coordinates(center_x, center_y)
+            .map(|position| Brick::new(position.0, position.1))
+            .collect();
+        Block {
+            center_brick_index,
+            center: bricks[center_brick_index],
+            bricks,
+        }
+    }
+
+    fn init_coordinates(center_x: i32, center_y: i32) -> impl Iterator<Item = (i32, i32)>;
 }
 
 /// Main Game object
@@ -63,7 +85,7 @@ struct Building {
 
 impl Game {
     pub fn new() -> Self {
-        Game { ..Game::default() }
+        Game::default()
     }
 }
 
@@ -130,7 +152,13 @@ mod tests {
         assert_eq!(brick.y, 2 + 4);
 
         let game = Game::new();
-        // TODO:
-        // let can_move_brick: bool = brick.can_move(&game, , dy)
+        let can_move_brick: bool = brick.can_move(&game, 2, 3);
+
+        assert!(!can_move_brick);
+    }
+
+    #[test]
+    fn test_tetra_block() {
+        let block = Block::new();
     }
 }
